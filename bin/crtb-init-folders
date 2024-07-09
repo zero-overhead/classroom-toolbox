@@ -1,0 +1,6 @@
+#!/usr/bin/env raku
+use App::Classroom::Toolbox;
+
+sub MAIN {
+    init-folders()
+}

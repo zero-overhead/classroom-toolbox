@@ -1,0 +1,25 @@
+#!/usr/bin/env raku
+use App::Classroom::Toolbox;
+
+sub MAIN (IO(Str) :$class-file?, IO(Str) :$room-file?, IO(Str) :$placements-folder, UInt :$max-name-width = 20) {
+
+    without $class-file {
+        without %*ENV<CRTB_CLASS> {
+            die "parameter --class-file=/path/to/class-file or environment variable CRTB_CLASS required. E.g. 'export CRTB_CLASS=classes/demo-class-small'"
+        }
+    }
+    without $room-file {
+        without %*ENV<CRTB_ROOM> {
+            die "parameter --room-file=/path/to/room-file or environment variable CRTB_ROOM required. E.g. 'export CRTB_ROOM=rooms/demo-room-1'"
+        }
+    }
+
+    without $placements-folder {
+        without %*ENV<CRTB_PLACEMENTS_FOLDER> {
+            die "parameter --placements-folder=directory/ or environment variable CRTB_PLACEMENTS_FOLDER required. E.g. 'export CRTB_PLACEMENTS_FOLDER=placements'"
+        }
+    }
+
+    create-placement($class-file || %*ENV<CRTB_CLASS>.IO, $room-file || %*ENV<CRTB_ROOM>.IO,
+            $placements-folder || %*ENV<CRTB_PLACEMENTS_FOLDER>.IO, $max-name-width)
+}

@@ -1,0 +1,30 @@
+#!/usr/bin/env raku
+use App::Classroom::Toolbox;
+
+sub MAIN (IO(Str) :$class-file?, IO(Str) :$picture-folder?, UInt :$group-size = 1) {
+    without $class-file {
+        without %*ENV<CRTB_CLASS> {
+            die "parameter --class-file=/path/to/class-file or environment variable CRTB_CLASS required. E.g. 'export CRTB_CLASS=classes/demo-class-small'"
+        }
+        with %*ENV<CRTB_CLASS> {
+            die %*ENV<CRTB_CLASS> ~ " not found" unless %*ENV<CRTB_CLASS>.IO.f;
+        }
+    }
+    with $class-file {
+        die "$class-file not found" unless $class-file.f;
+    }
+
+    with $picture-folder {
+        die "$picture-folder not found" unless $picture-folder.d;
+    }
+    without $picture-folder {
+        with %*ENV<CRTB_PICTURE_FOLDER> {
+            die %*ENV<CRTB_PICTURE_FOLDER> ~ " not found. Set e.g. 'export CRTB_PICTURE_FOLDER=pictures'" unless %*ENV<CRTB_PICTURE_FOLDER>
+                    .IO.d;
+        }
+    }
+
+    pick-group-from-class-file($class-file || %*ENV<CRTB_CLASS>.IO,
+            :$group-size,
+            pictures-folder => $picture-folder || %*ENV<CRTB_PICTURE_FOLDER>.IO);
+}

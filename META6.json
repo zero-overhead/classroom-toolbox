@@ -1,0 +1,42 @@
+{
+  "auth": "zef:zero-overhead",
+  "authors": [
+    "rcmlz"
+  ],
+  "build-depends": [
+  ],
+  "depends": [
+    "Text::Table::Simple",
+    "Terminal::ANSIColor",
+    "Terminal::Print",
+    "P5localtime",
+    "JSON::Fast"
+  ],
+  "description": "Simple Classroom Management Toolbox.",
+  "license": "Artistic-2.0",
+  "name": "App::Classroom::Toolbox",
+  "provides": {
+    "App::Classroom::Toolbox": "lib/App/Classroom/Toolbox.rakumod"
+  },
+  "raku": "6.d",
+  "resources": [
+    "classes/demo-class-large",
+    "classes/demo-class-small",
+    "rooms/demo-room-1",
+    "rooms/demo-room-2",
+    "rooms/demo-room-3",
+    "pictures/Leon.Braun@school.de.jpg",
+    "pictures/Lukas.Schäfer@school.de.jpg",
+    "pictures/Maxi.Schneider@school.de.jpg",
+    "pictures/Niklas.Hartmann@school.de.jpg",
+    "groups/demo-grouping",
+    "placements/demo-placement",
+    "placements/demo-placement"
+  ],
+  "source-url": "https://github.com/zero-overhead/werkzeugkasten/.git",
+  "tags": [
+  ],
+  "test-depends": [
+  ],
+  "version": "0.0.1"
+}

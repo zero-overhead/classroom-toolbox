@@ -1,0 +1,8 @@
+use v6.d;
+use Test;
+use lib 'lib';
+use App::Classroom::Toolbox;
+
+pass "replace me";
+
+done-testing;

@@ -1,0 +1,27 @@
+#!/usr/bin/env raku
+use v6.d;
+
+use App::Classroom::Toolbox;
+use JSON::Fast;
+
+sub MAIN(IO(Str) :$placement-file?, Bool :$teacher-view = True) {
+    my @placement;
+    without $placement-file {
+        without %*ENV<CRTB_PLACEMENT> {
+            die "parameter --placement-file=/path/to/placement-file or environment variable CRTB_PLACEMENT required. E.g. 'export CRTB_PLACEMENT=placements/demo-placement'"
+        }
+        with %*ENV<CRTB_PLACEMENT> {
+            die %*ENV<CRTB_PLACEMENT> ~ " not found" unless %*ENV<CRTB_PLACEMENT>.IO.f;
+            @placement = from-json %*ENV<CRTB_PLACEMENT>.IO.slurp;
+        }
+    }
+    with $placement-file {
+        die "$placement-file not found" unless $placement-file.f;
+        @placement = from-json $placement-file.slurp;
+    }
+    if $teacher-view {
+        .say for create-teacher-view(@placement);
+    } else {
+        .say for create-student-view(@placement);
+    }
+}

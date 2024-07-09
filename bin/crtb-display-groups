@@ -1,0 +1,18 @@
+#!/usr/bin/env raku
+use v6.d;
+
+use App::Classroom::Toolbox;
+use JSON::Fast;
+
+sub MAIN(IO(Str) :$grouping-file?) {
+    my @grouping;
+
+    without $grouping-file {
+        die "parameter --grouping-file=/path/to/grouping-file or environment variable CRTB_GROUP required. E.g. 'export CRTB_GROUP=groups/demo-grouping'" without %*ENV<CRTB_GROUP>;
+        @grouping = from-json %*ENV<CRTB_GROUP>.IO.slurp with %*ENV<CRTB_GROUP>
+    }
+    @grouping = from-json $grouping-file.slurp with $grouping-file;
+
+    print "\n";
+    .join("\t").say for @grouping
+}

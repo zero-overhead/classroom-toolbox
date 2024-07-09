@@ -1,0 +1,38 @@
+#!/usr/bin/env raku
+use App::Classroom::Toolbox;
+use JSON::Fast;
+
+subset IntGtZero of UInt where *> 0;
+subset IntGtOne of UInt where *> 1;
+
+sub MAIN (IO(Str) :$class-file?, IntGtOne:D :$primary-size = 2, IntGtZero:D :$secondary-size = $primary-size - 1,
+          IO(Str) :$group-folder?) {
+    without $class-file {
+        without %*ENV<CRTB_CLASS> {
+            die "parameter --class-file=/path/to/class-file or environment variable CRTB_CLASS required. E.g. 'export CRTB_CLASS=classes/demo-class-small'"
+        }
+    }
+    without $group-folder {
+        without %*ENV<CRTB_GROUP_FOLDER> {
+            die "parameter --group-folder=groups or environment variable GROUP_FOLDER required. E.g. 'export CRTB_GROUP_FOLDER=groups'"
+        }
+        with %*ENV<CRTB_GROUP_FOLDER> {
+            die "folder " ~ %*ENV<CRTB_GROUP_FOLDER> ~ " not found!" unless %*ENV<CRTB_GROUP_FOLDER>.IO.d
+        }
+    }
+
+    my @groups = create-groups($class-file || %*ENV<CRTB_CLASS>.IO, $primary-size, $secondary-size);
+
+    print "\n";
+
+    .say for @groups.map: *.join("\t");
+
+    my $class = ($class-file || %*ENV<CRTB_CLASS>.IO).basename;
+    my $date = Date.today;
+    my $group-file-name = ($group-folder || %*ENV<CRTB_GROUP_FOLDER>.IO).add(join '_', $date, $class, $primary-size,
+            $secondary-size);
+
+    spurt $group-file-name, to-json @groups;
+
+    #note "\n$group-file-name"
+}
