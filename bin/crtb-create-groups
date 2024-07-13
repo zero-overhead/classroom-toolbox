@@ -1,38 +1,17 @@
 #!/usr/bin/env raku
 use App::Classroom::Toolbox;
-use JSON::Fast;
 
-subset IntGtZero of UInt where *> 0;
-subset IntGtOne of UInt where *> 1;
+sub MAIN (UInt:D :p(:$primary-size)   where * > 1  = 2,                        #= primary group size; > 1
+          UInt:D :s(:$secondary-size) where * > 0  = $primary-size - 1,        #= secondary group size; > 0, might be needed to assign all students to groups
+          Str:D :c(:$class-file)?     where *.IO.f = %*ENV<CRTB_CLASS>,        #= file containing students information; --class-file=classes/demo-class-small or 'export CRTB_CLASS=classes/demo-class-small'
+          Str:D :g(:$group-folder)?   where *.IO.d = %*ENV<CRTB_GROUP_FOLDER>, #= folder to store created groups as files; --group-folder=groups 'export CRTB_GROUP_FOLDER=groups'
+          ) {
 
-sub MAIN (IO(Str) :$class-file?, IntGtOne:D :$primary-size = 2, IntGtZero:D :$secondary-size = $primary-size - 1,
-          IO(Str) :$group-folder?) {
-    without $class-file {
-        without %*ENV<CRTB_CLASS> {
-            die "parameter --class-file=/path/to/class-file or environment variable CRTB_CLASS required. E.g. 'export CRTB_CLASS=classes/demo-class-small'"
-        }
-    }
-    without $group-folder {
-        without %*ENV<CRTB_GROUP_FOLDER> {
-            die "parameter --group-folder=groups or environment variable GROUP_FOLDER required. E.g. 'export CRTB_GROUP_FOLDER=groups'"
-        }
-        with %*ENV<CRTB_GROUP_FOLDER> {
-            die "folder " ~ %*ENV<CRTB_GROUP_FOLDER> ~ " not found!" unless %*ENV<CRTB_GROUP_FOLDER>.IO.d
-        }
-    }
-
-    my @groups = create-groups($class-file || %*ENV<CRTB_CLASS>.IO, $primary-size, $secondary-size);
+    my @groups = create-groups($class-file, $primary-size, $secondary-size);
 
     print "\n";
+    print create-group-view(@groups);
+    print "\n";
 
-    .say for @groups.map: *.join("\t");
-
-    my $class = ($class-file || %*ENV<CRTB_CLASS>.IO).basename;
-    my $date = Date.today;
-    my $group-file-name = ($group-folder || %*ENV<CRTB_GROUP_FOLDER>.IO).add(join '_', $date, $class, $primary-size,
-            $secondary-size);
-
-    spurt $group-file-name, to-json @groups;
-
-    #note "\n$group-file-name"
+    save-group(:@groups, :$group-folder, :$class-file, :$primary-size, :$secondary-size)
 }

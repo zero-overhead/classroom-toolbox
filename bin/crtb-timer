@@ -1,12 +1,9 @@
 #!/usr/bin/env raku
 use v6.d;
-use App::Classroom::Toolbox;
+use App::Classroom::Toolbox::Timer;
 
-use Terminal::Print <T>;
-
-sub MAIN(UInt :$minutes = 15) {
-    T.initialize-screen;
-    timer(T, $minutes);
-    prompt;
-    T.shutdown-screen;
+sub MAIN(UInt:D :min($minutes), #= Minutes the timer shall run
+         Bool   :$skip-wait,    #= Wait for return/enter key after timer finished?
+         ) {
+    run-timer($minutes, $skip-wait)
 }

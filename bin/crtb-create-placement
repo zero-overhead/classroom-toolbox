@@ -1,25 +1,10 @@
 #!/usr/bin/env raku
 use App::Classroom::Toolbox;
 
-sub MAIN (IO(Str) :$class-file?, IO(Str) :$room-file?, IO(Str) :$placements-folder, UInt :$max-name-width = 20) {
-
-    without $class-file {
-        without %*ENV<CRTB_CLASS> {
-            die "parameter --class-file=/path/to/class-file or environment variable CRTB_CLASS required. E.g. 'export CRTB_CLASS=classes/demo-class-small'"
-        }
-    }
-    without $room-file {
-        without %*ENV<CRTB_ROOM> {
-            die "parameter --room-file=/path/to/room-file or environment variable CRTB_ROOM required. E.g. 'export CRTB_ROOM=rooms/demo-room-1'"
-        }
-    }
-
-    without $placements-folder {
-        without %*ENV<CRTB_PLACEMENTS_FOLDER> {
-            die "parameter --placements-folder=directory/ or environment variable CRTB_PLACEMENTS_FOLDER required. E.g. 'export CRTB_PLACEMENTS_FOLDER=placements'"
-        }
-    }
-
-    create-placement($class-file || %*ENV<CRTB_CLASS>.IO, $room-file || %*ENV<CRTB_ROOM>.IO,
-            $placements-folder || %*ENV<CRTB_PLACEMENTS_FOLDER>.IO, $max-name-width)
+sub MAIN (Str:D  :c(:$class-file)?         where *.IO.f = %*ENV<CRTB_CLASS>,             #= file containing students information; --class-file=classes/demo-class-small or 'export CRTB_CLASS=classes/demo-class-small'
+          Str:D  :r(:$room-file)?          where *.IO.f = %*ENV<CRTB_ROOM>,              #= folder to store created groups as files --room-file=rooms/demo-room-1 'export CRTB_ROOM=rooms/demo-room-1'
+          Str:D  :p(:$placements-folder)?  where *.IO.d = %*ENV<CRTB_PLACEMENTS_FOLDER>, #= folder to store created placements as files; --placements-folder=placements 'export CRTB_PLACEMENTS_FOLDER=placements'
+          UInt:D :n(:$max-name-width) = 20                                               #= maximum width of names
+          ) {
+    create-placement($class-file, $room-file, $placements-folder, $max-name-width)
 }

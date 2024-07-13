@@ -2,17 +2,12 @@
 use v6.d;
 
 use App::Classroom::Toolbox;
-use JSON::Fast;
 
-sub MAIN(IO(Str) :$grouping-file?) {
-    my @grouping;
-
-    without $grouping-file {
-        die "parameter --grouping-file=/path/to/grouping-file or environment variable CRTB_GROUP required. E.g. 'export CRTB_GROUP=groups/demo-grouping'" without %*ENV<CRTB_GROUP>;
-        @grouping = from-json %*ENV<CRTB_GROUP>.IO.slurp with %*ENV<CRTB_GROUP>
-    }
-    @grouping = from-json $grouping-file.slurp with $grouping-file;
+sub MAIN(Str:D :g(:$grouping-file)? where *.IO.f = %*ENV<CRTB_GROUP>, #= file containing grouping; --class-file=groups/demo-grouping or 'export CRTB_GROUP=groups/demo-grouping'
+         ) {
 
     print "\n";
-    .join("\t").say for @grouping
+    .join("\t").say for read-group-file($grouping-file);
+    print "\n";
+
 }

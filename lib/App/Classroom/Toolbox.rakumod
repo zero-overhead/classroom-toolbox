@@ -3,88 +3,7 @@ unit class App::Classroom::Toolbox:ver<0.0.1>:auth<github:rcmlz>:api<1>;
 use Text::Table::Simple;
 use Terminal::ANSIColor;
 use JSON::Fast;
-use P5localtime;
 
-constant pictographs = "\c[Bell with Cancellation Stroke]",
-                       "\c[Penguin]",
-                       "\c[BELL]",
-                       "\c[Water Buffalo]",
-                       "\c[Ox]",
-                       "\c[Mouse]",
-                       "\c[Rat]",
-                       "\c[Confetti Ball]",
-                       "\c[Clinking Beer Mugs]",
-                       "\c[Doughnut]",
-                       "\c[Burrito]",
-                       "\c[Sun with Face]",
-                       "\c[Full Moon with Face]",
-                       "\c[Closed Umbrella]",
-                       "\c[Taco]",
-                       "\c[Hot Dog]",
-                       "\c[Cloud with Tornado]",
-                       "\c[Thermometer]",
-                       "\c[Cyclone]",
-                       "\c[Octopus]",
-                       "\c[Elephant]",
-                       "\c[Boar]",
-                       "\c[Pig]",
-                       "\c[Dog]",
-                       "\c[Chicken]",
-                       "\c[Rooster]",
-                       "\c[Monkey]",
-                       "\c[Sheep]",
-                       "\c[Goat]",
-                       "\c[Ram]",
-                       "\c[Horse]",
-                       "\c[Snake]",
-                       "\c[Snail]",
-                       "\c[Whale]",
-                       "\c[Crocodile]",
-                       "\c[Dragon]",
-                       "\c[Cat]",
-                       "\c[Rabbit]",
-                       "\c[Leopard]",
-                       "\c[Tiger]",
-                       "\c[Cat Face]",
-                       "\c[Rabbit Face]",
-                       "\c[Tiger Face]",
-                       "\c[Cow Face]",
-                       "\c[Mouse Face]",
-                       "\c[Dolphin]",
-                       "\c[Bactrian Camel]",
-                       "\c[Dromedary Camel]",
-                       "\c[Poodle]",
-                       "\c[Koala]",
-                       "\c[Bird]",
-                       "\c[Front-Facing Baby Chick]",
-                       "\c[Baby Chick]",
-                       "\c[Hatching Chick]",
-                       "\c[Turtle]",
-                       "\c[Blowfish]",
-                       "\c[Tropical Fish]",
-                       "\c[Fish]",
-                       "\c[Lady Beetle]",
-                       "\c[Honeybee]",
-                       "\c[Ant]",
-                       "\c[Bug]",
-                       "\c[Spiral Shell]",
-                       "\c[Dragon Face]",
-                       "\c[Spouting Whale]",
-                       "\c[Horse Face]",
-                       "\c[Monkey Face]",
-                       "\c[Dog Face]",
-                       "\c[Pig Face]",
-                       "\c[Frog Face]",
-                       "\c[Hamster Face]",
-                       "\c[Wolf Face]",
-                       "\c[Bear Face]",
-                       "\c[Panda Face]",
-                       "\c[Pig Nose]",
-                       "\c[Paw Prints]",
-                       "\c[Chipmunk]",
-                       "\c[Eyes]",
-                       "\c[Eye]",
-                       "\c[Cow]";
 
 constant %text-table-simple-options =
 rows => {
@@ -106,59 +25,7 @@ headers => {
     bottom_border => '',
 };
 
-sub format-elapsed-time($elapsed) {
-    my $hours = $elapsed.Int div 3600;
-    my $minutes = ($elapsed.Int mod 3600) div 60;
-    my $seconds = $elapsed.Int mod 60;
-    if $minutes < 1 {
-        return $hours.fmt("%02d") ~ ':' ~ $minutes.fmt("%02d") ~ ':' ~ $seconds.fmt("%02d");
-    } else {
-        return $hours.fmt("%02d") ~ ':' ~ $minutes.fmt("%02d");
-    }
-}
-sub timer(\Terminal, $minutes=1) is export {
-    my $start = now;
-    my $end = $start + 60 * $minutes + 1;
 
-    my ($sec,$minute,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime($end);
-
-    $minute = "0$minute" if $minute < 10;
-    $hour = "0$hour" if $hour < 10;
-
-    my @columns = ^Terminal.columns;
-    my @rows = ^Terminal.rows;
-
-    my $x = @columns.elems / 2 - 5;
-    my $y = @rows.elems / 2 - 1;
-
-    Terminal.print-string( @columns.elems - 6, @rows.elems - 1, join ":", $hour, $minute);
-
-    my $time-left = $end - now;
-
-    while $time-left > 0 {
-        Terminal.print-string( $x, $y, format-elapsed-time($time-left));
-
-        # print progress dots
-        my $printable = ((@columns.elems - 9) * (now - $start)/($end - $start)).Int;
-        for ^$printable -> $col {
-            Terminal.print-string( 1 + $col, @rows.elems - 1, '.');
-        }
-
-        $time-left = $end - now;
-        sleep 1 if $time-left < 70;
-        sleep 10 if $time-left >= 70;
-    }
-
-    # itgnore last row/column
-    @columns.pop;
-    @rows.pop;
-    my $symbol = pictographs.pick;
-    for (@columns X @rows).pick(*) -> ($x, $y) {
-        next if $x %% 2;
-        Terminal.print-string( $x, $y, $symbol);
-        sleep 0.001;
-    }
-}
 sub get-class(IO $class-file) {
     $class-file.lines.grep(/^^\w/);
 }
@@ -246,7 +113,28 @@ sub create-teacher-view(@room) is export {
     join "\n", create-footer(@placement), @placement, create-header(@placement)
 }
 
-sub create-placement(IO $class-file, IO $room-file, IO $placement-dir, UInt $max-name-width) is export {
+sub create-group-view(@grouping) is export {
+    lol2table(@grouping, |%text-table-simple-options)
+}
+
+sub read-file(IO $file) {
+    from-json $file.slurp;
+}
+
+sub read-group-file(IO(Str) $grouping-file) is export {
+    read-file($grouping-file)
+}
+sub read-placement-file(IO(Str) $placement-file) is export {
+    read-file($placement-file)
+}
+
+sub save-group(:@groups, IO(Str) :$group-folder, IO(Str) :$class-file, UInt :$primary-size, UInt :$secondary-size) is export {
+    my $group-file-name = $group-folder.add(join '_', Date.today, $class-file.basename, $primary-size, $secondary-size);
+    spurt $group-file-name, to-json @groups;
+    note "\n$group-file-name"
+}
+
+sub create-placement(IO(Str) $class-file, IO(Str) $room-file, IO(Str) $placement-dir, UInt $max-name-width) is export {
     my @not-placed-students = extract-names(get-class($class-file)).pick(*);
     my @room = $room-file.lines.map: { Array.new: $_.comb };
 
@@ -284,7 +172,7 @@ sub create-placement(IO $class-file, IO $room-file, IO $placement-dir, UInt $max
     say "export CRTB_PLACEMENT=$placement-file-name"
 }
 
-sub create-groups($class-file, $primary-size, $secondary-size) is export {
+sub create-groups(IO(Str) $class-file, UInt $primary-size, UInt $secondary-size) is export {
     my @students = extract-names(get-class($class-file)).pick(*);
     my $n = @students.elems;
 
