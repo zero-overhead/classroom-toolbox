@@ -35,9 +35,28 @@ sub extract-emails(@class) {
 }
 
 sub extract-names(@class) {
-    @class.map: { .split(',').map(*.trim)[2, 1] }
+    my @names = @class.map: { .split(',').map(*.trim)[2, 1] };
+    my @surenames;
+    my @first-names;
+    for @names {
+        @first-names.push: $_[0];
+        @surenames.push: $_[1];
+    }
+    return @first-names if @first-names.unique.elems == @first-names.elems;
+    return unique-first-names(@first-names, @surenames);
 }
-
+sub unique-first-names(@first-names, @surenames) {
+    my Set $repeated = @first-names.repeated.Set;
+    gather {
+        for @first-names.keys -> $i {
+            if @first-names[$i] ∈ $repeated {
+                take @first-names[$i] ~ " " ~ @surenames[$i].substr(0,1) ~ '.'
+            }else{
+                take @first-names[$i]
+            }
+        }
+    }
+}
 sub pick-group-from-class-file(IO $class-file, UInt :$group-size, IO :$pictures-folder?) is export {
     my @class = get-class($class-file);
     my @group = @class.pick($group-size);
