@@ -1,10 +1,10 @@
 #!/usr/bin/env raku
 use App::Classroom::Toolbox;
 
-sub MAIN (Str:D  :c(:$class-file)?         where *.IO.f = %*ENV<CRTB_CLASS>,             #= file containing students information; --class-file=classes/demo-class-small or 'export CRTB_CLASS=classes/demo-class-small'
-          Str:D  :r(:$room-file)?          where *.IO.f = %*ENV<CRTB_ROOM>,              #= folder to store created groups as files --room-file=rooms/demo-room-1 'export CRTB_ROOM=rooms/demo-room-1'
-          Str:D  :p(:$placements-folder)?  where *.IO.d = %*ENV<CRTB_PLACEMENTS_FOLDER>, #= folder to store created placements as files; --placements-folder=placements 'export CRTB_PLACEMENTS_FOLDER=placements'
-          UInt:D :n(:$max-name-width) = 20                                               #= maximum width of names
+sub MAIN (Str:D  :c(:$class-file)         where *.IO.f = %*ENV<CRTB_CLASS_FILE>,        #= file containing students information; --class-file=classes/demo-class-small or 'export CRTB_CLASS=classes/demo-class-small'
+          Str:D  :r(:$room-file)          where *.IO.f = %*ENV<CRTB_ROOM_FILE>,         #= folder to store created groups as files --room-file=rooms/demo-room-1 'export CRTB_ROOM=rooms/demo-room-1'
+          Str:D  :p(:$placements-folder)  where *.IO.d = %*ENV<CRTB_PLACEMENTS_FOLDER>, #= folder to store created placements as files; --placements-folder=placements 'export CRTB_PLACEMENTS_FOLDER=placements'
+          UInt:D :n(:$max-name-width)     where * > 0  = %*ENV<CRTB_MAX_NAME_WIDTH>     #= maximum width of names
           ) {
-    create-placement($class-file, $room-file, $placements-folder, $max-name-width)
+    my @placement = create-placement($class-file, $room-file, $placements-folder, $max-name-width)
 }

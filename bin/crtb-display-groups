@@ -3,11 +3,7 @@ use v6.d;
 
 use App::Classroom::Toolbox;
 
-sub MAIN(Str:D :g(:$grouping-file)? where *.IO.f = %*ENV<CRTB_GROUP>, #= file containing grouping; --class-file=groups/demo-grouping or 'export CRTB_GROUP=groups/demo-grouping'
+sub MAIN(Str:D :gf(:$grouping-file) where *.IO.f = %*ENV<CRTB_GROUP_FILE>, #= file containing grouping; --grouping-file=groups/demo-grouping or 'export CRTB_GROUP_FILE=groups/demo-grouping'
          ) {
-
-    print "\n";
-    .join("\t").say for read-group-file($grouping-file);
-    print "\n";
-
+    read-group-file($grouping-file) ==> display-grouping;
 }

@@ -3,20 +3,11 @@ use App::Classroom::Toolbox;
 use JSON::Fast;
 use Terminal::ANSIColor;
 
-sub MAIN (IO(Str) :$placement-file?, UInt :$group-size = 1) {
-    without $placement-file {
-        without %*ENV<CRTB_PLACEMENT> {
-            die "parameter --placement-file=/path/to/placement-file or environment variable CRTB_PLACEMENT required. E.g. 'export CRTB_PLACEMENT=placements/demo-placement'"
-        }
-        with %*ENV<CRTB_PLACEMENT> {
-            die %*ENV<CRTB_PLACEMENT> ~ " not found" unless %*ENV<CRTB_PLACEMENT>.IO.f;
-        }
-    }
-    with $placement-file {
-        die "$placement-file not found" unless $placement-file.f;
-    }
+sub MAIN (IO(Str) :p(:$placement-file) where *.IO.f = %*ENV<CRTB_PLACEMENT_FILE>, #= file containing placement; --placement-file=placements/demo-placement or 'export CRTB_PLACEMENT_FILE=placements/demo-placement'
+          UInt    :g(:$group-size)     where * > 0  = %*ENV<CRTB_GROUP_SIZE>      #= size of group to pick; 'export CRTB_GROUP_SIZE=1'
+          ) {
 
-    my @room = from-json ($placement-file || %*ENV<CRTB_PLACEMENT>.IO).slurp;
+    my @room = from-json $placement-file.slurp;
     my @students = flat @room.map: *.grep(/\w../);
     my @highlighted = @students.pick($group-size);
     my Str $out = create-teacher-view(@room);

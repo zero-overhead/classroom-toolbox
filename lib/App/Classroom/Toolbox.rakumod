@@ -35,7 +35,7 @@ sub extract-emails(@class) {
 }
 
 sub extract-names(@class) {
-    my @names = @class.map: { .split(',').map(*.trim)[2, 1] };
+    my @names = @class.map({ .split(',').map(*.trim)[2, 1] });
     my @surenames;
     my @first-names;
     for @names {
@@ -45,19 +45,20 @@ sub extract-names(@class) {
     return @first-names if @first-names.unique.elems == @first-names.elems;
     return unique-first-names(@first-names, @surenames);
 }
-sub unique-first-names(@first-names, @surenames) {
+
+sub unique-first-names(@first-names, @surenames, :$surename-abrevated-lenght=1) {
     my Set $repeated = @first-names.repeated.Set;
     gather {
         for @first-names.keys -> $i {
             if @first-names[$i] ∈ $repeated {
-                take @first-names[$i] ~ " " ~ @surenames[$i].substr(0,1) ~ '.'
+                take @first-names[$i] ~ " " ~ @surenames[$i].substr(0,$surename-abrevated-lenght) ~ '.'
             }else{
                 take @first-names[$i]
             }
         }
     }
 }
-sub pick-group-from-class-file(IO $class-file, UInt :$group-size, IO :$pictures-folder?) is export {
+sub pick-group-from-class-file(IO(Str) :$class-file, UInt :$group-size, IO(Str) :$pictures-folder?) is export {
     my @class = get-class($class-file);
     my @group = @class.pick($group-size);
     my @names = extract-names(@group);
@@ -132,10 +133,6 @@ sub create-teacher-view(@room) is export {
     join "\n", create-footer(@placement), @placement, create-header(@placement)
 }
 
-sub create-group-view(@grouping) is export {
-    lol2table(@grouping, |%text-table-simple-options)
-}
-
 sub read-file(IO $file) {
     from-json $file.slurp;
 }
@@ -145,12 +142,6 @@ sub read-group-file(IO(Str) $grouping-file) is export {
 }
 sub read-placement-file(IO(Str) $placement-file) is export {
     read-file($placement-file)
-}
-
-sub save-group(:@groups, IO(Str) :$group-folder, IO(Str) :$class-file, UInt :$primary-size, UInt :$secondary-size) is export {
-    my $group-file-name = $group-folder.add(join '_', Date.today, $class-file.basename, $primary-size, $secondary-size);
-    spurt $group-file-name, to-json @groups;
-    note "\n$group-file-name"
 }
 
 sub create-placement(IO(Str) $class-file, IO(Str) $room-file, IO(Str) $placement-dir, UInt $max-name-width) is export {
@@ -188,10 +179,10 @@ sub create-placement(IO(Str) $class-file, IO(Str) $room-file, IO(Str) $placement
     }
 
     print "\n";
-    say "export CRTB_PLACEMENT=$placement-file-name"
+    say "export CRTB_PLACEMENT_FILE=$placement-file-name"
 }
 
-sub create-groups(IO(Str) $class-file, UInt $primary-size, UInt $secondary-size) is export {
+sub create-grouping(IO(Str) :$class-file, UInt :$primary-size, UInt :$secondary-size) is export {
     my @students = extract-names(get-class($class-file)).pick(*);
     my $n = @students.elems;
 
@@ -199,13 +190,40 @@ sub create-groups(IO(Str) $class-file, UInt $primary-size, UInt $secondary-size)
         ($secondary-size, $primary-size) Z=> ((0 .. ($n div $secondary-size)) X (0 .. ($n div $primary-size)) andthen
                 .first({ (sum $_ >>*<< ($secondary-size,
                                         $primary-size)) == $n })) || note "\nImpossible to split $n students into groups of sizes $primary-size and $secondary-size !!\n" andthen
-                .sort.map({
+                .map({
                     my UInt $gsize = .key;
                     my UInt $gcount = .value;
-                    for ^$gcount { take @students.splice(0, $gsize) }
-                });
-
+                        for ^$gcount { take @students.splice(0, $gsize)}
+                })
     }
+}
+
+sub display-grouping(@grouping) is export {
+    my $max-elems = max @grouping.map: *.elems;
+    my $min-elems = min @grouping.map: *.elems;
+    my $pad-elems = $max-elems - $min-elems;
+
+    return if $pad-elems == 0;
+
+    my @padded;
+    for @grouping {
+        if $_.elems < $max-elems {
+            my @p = |$_, |('' xx $pad-elems);
+            @padded.push: @p
+            }else{
+            @padded.push: $_
+        }
+    }
+
+    print "\n";
+    print lol2table(@padded, |%text-table-simple-options).join("\n");
+    print "\n";
+}
+
+sub save-grouping(@grouping, IO(Str) :$group-folder, IO(Str) :$class-file, UInt :$primary-size, UInt :$secondary-size) is export {
+    my $group-file-name = $group-folder.add(join '_', Date.today, $class-file.basename, $primary-size, $secondary-size);
+    spurt $group-file-name, to-json @grouping;
+    return $group-file-name
 }
 
 =begin pod

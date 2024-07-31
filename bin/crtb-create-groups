@@ -1,17 +1,14 @@
 #!/usr/bin/env raku
 use App::Classroom::Toolbox;
 
-sub MAIN (UInt:D :p(:$primary-size)   where * > 1  = 2,                        #= primary group size; > 1
-          UInt:D :s(:$secondary-size) where * > 0  = $primary-size - 1,        #= secondary group size; > 0, might be needed to assign all students to groups
-          Str:D :c(:$class-file)?     where *.IO.f = %*ENV<CRTB_CLASS>,        #= file containing students information; --class-file=classes/demo-class-small or 'export CRTB_CLASS=classes/demo-class-small'
-          Str:D :g(:$group-folder)?   where *.IO.d = %*ENV<CRTB_GROUP_FOLDER>, #= folder to store created groups as files; --group-folder=groups 'export CRTB_GROUP_FOLDER=groups'
+sub MAIN (UInt:D :ps(:$primary-size)   where * > 1  = %*ENV<CRTB_PRIMARY_GROUP_SIZE>,   #= primary group size; > 1, 'export CRTB_PRIMARY_GROUP_SIZE=2'
+          UInt:D :ss(:$secondary-size) where * > 0  = %*ENV<CRTB_SECONDARY_GROUP_SIZE>, #= secondary group size; > 0, needed to assign all students, 'export CRTB_SECONDARY_GROUP_SIZE=3'
+          Str:D :cf(:$class-file)      where *.IO.f = %*ENV<CRTB_CLASS_FILE>,           #= file containing students information; --class-file=classes/demo-class-small or 'export CRTB_CLASS_FILE=classes/demo-class-small'
+          Str:D :gf(:$group-folder)    where *.IO.d = %*ENV<CRTB_GROUP_FOLDER>          #= folder to store created groups as files; --group-folder=groups 'export CRTB_GROUP_FOLDER=groups'
           ) {
 
-    my @groups = create-groups($class-file, $primary-size, $secondary-size);
-
-    print "\n";
-    print create-group-view(@groups);
-    print "\n";
-
-    save-group(:@groups, :$group-folder, :$class-file, :$primary-size, :$secondary-size)
+        my @grouping        = create-grouping(:$class-file, :$primary-size, :$secondary-size);
+        my $group-file-name = save-grouping(@grouping, :$group-folder, :$class-file, :$primary-size, :$secondary-size);
+        display-grouping(@grouping);
+        note "\nexport CRTB_GROUP_FILE=$group-file-name";
 }

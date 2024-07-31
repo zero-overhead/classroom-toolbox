@@ -3,8 +3,8 @@ use v6.d;
 
 use App::Classroom::Toolbox;
 
-sub MAIN(IO(Str) :p(:$placement-file)? where *.IO.f = %*ENV<CRTB_PLACEMENT>, #= file containing placement; --class-file=placements/demo-placement or 'export CRTB_PLACEMENT=placements/demo-placement'
-         Bool :s(:$student-view)                                             #= show how students vie it, otherwise teacher view is selected
+sub MAIN(IO(Str) :p(:$placement-file) where *.IO.f = %*ENV<CRTB_PLACEMENT_FILE>, #= file containing placement; --class-file=placements/demo-placement or 'export CRTB_PLACEMENT=placements/demo-placement'
+         Bool :s(:$student-view)                                                 #= show how students vie it, otherwise teacher view is selected
          ) {
     my @placement = read-placement-file($placement-file);
 
