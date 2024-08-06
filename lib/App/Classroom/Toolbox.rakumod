@@ -4,7 +4,6 @@ use Text::Table::Simple;
 use Terminal::ANSIColor;
 use JSON::Fast;
 
-
 constant %text-table-simple-options =
 rows => {
     column_separator => '',
