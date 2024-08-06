@@ -35,26 +35,35 @@ CONFIGURATION
 
 Set defaults to be used by tools - if you do not like to use the corresponding command line parameters.
 
-```bash
-export CRTB_CLASS=classes/demo-class-large
-export CRTB_ROOM=rooms/demo-room-1
-```
-
-After you created a placement, grouping or grading you might want to set
-
-```bash
-export CRTB_PLACEMENT=placements/demo-placement
-export CRTB_GROUP=groups/demo-grouping
-export CRTB_GRADE=grades/demo-grading
-```
-
-This usually won't change much - perhaps use direnv to set these automatically
-
+This usually won't change much - perhaps use direnv to set all of these variables automatically
 ```bash
 export CRTB_PICTURE_FOLDER=pictures
 export CRTB_PLACEMENTS_FOLDER=placements
 export CRTB_GRADES_FOLDER=grades
 export CRTB_GROUP_FOLDER=groups
+```
+
+Before creating a placement
+
+```bash
+export CRTB_CLASS_FILE=classes/demo-class-large
+export CRTB_ROOM_FILE=rooms/demo-room-1
+
+export CRTB_MAX_DISPLAY_NAME_WIDTH=20
+```
+
+After you created a placement, grouping or grading you might want to set
+
+```bash
+export CRTB_PLACEMENT_FILE=placements/demo-placement
+export CRTB_GROUP_FILE=groups/demo-grouping
+export CRTB_GRADE_FILE=grades/demo-grading
+```
+
+```bash
+export CRTB_GROUP_SIZE=1
+export CRTB_PRIMARY_GROUP_SIZE=2
+export CRTB_SECONDARY_GROUP_SIZE=3
 ```
 
 **classes/**
