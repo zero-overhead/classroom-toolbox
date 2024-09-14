@@ -150,23 +150,24 @@ sub create-placement(IO(Str) $class-file, IO(Str) $room-file, IO(Str) $placement
     # pre-process student names
     @not-placed-students = @not-placed-students.map({ .substr(0, $max-name-width) });
 
-    # create placement - first round - only 1 prio seats assigned
-    for ^@room.elems -> $row_id {
-        for ^@room[$row_id].elems -> $seat {
-            my $marker = @room[$row_id][$seat];
-            if $marker eq "1" and @not-placed-students.elems {
-                @room[$row_id][$seat] = @not-placed-students.pop
+    # create placements - by prio
+    my @seat-priorities = (1..4).map: *.Str;
+    for @seat-priorities -> $prio {
+        for ^@room.elems -> $row_id {
+            for ^@room[$row_id].elems -> $seat {
+                my $marker = @room[$row_id][$seat];
+                if $marker eq $prio and @not-placed-students.elems {
+                    @room[$row_id][$seat] = @not-placed-students.pop
+                }
             }
         }
     }
 
-    # create placement - second round - 2 prio seats assigned and X if seat is not needed
+    # assign X to seats not needed
     for ^@room.elems -> $row_id {
         for ^@room[$row_id].elems -> $seat {
             my $marker = @room[$row_id][$seat];
-            if $marker eq "2" and @not-placed-students.elems {
-                @room[$row_id][$seat] = @not-placed-students.pop
-            } elsif $marker eq any("1", "2") and not @not-placed-students.elems {
+            if $marker ∈ @seat-priorities {
                 @room[$row_id][$seat] = "X"
             }
         }
