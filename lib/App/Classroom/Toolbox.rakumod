@@ -151,7 +151,7 @@ sub create-placement(IO(Str) $class-file, IO(Str) $room-file, IO(Str) $placement
     @not-placed-students = @not-placed-students.map({ .substr(0, $max-name-width) });
 
     # create placements - by prio
-    my @seat-priorities = (1..4).map: *.Str;
+    my @seat-priorities = (^10).map: *.Str;
     for @seat-priorities -> $prio {
         for ^@room.elems -> $row_id {
             for ^@room[$row_id].elems -> $seat {
