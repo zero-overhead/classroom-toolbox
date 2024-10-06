@@ -225,8 +225,11 @@ sub show_pictures(%group, :$pictures-folder1, :$pictures-folder2) is export {
         if @fotos.elems > 0 {
             # uses feh and imagemagick
             my $tool = "feh --multiwindow --scale-down --no-menus --draw-tinted --draw-filename --borderless --auto-zoom --";
-            my $cmd = "timeout --signal=HUP --kill-after=12 10 $tool " ~  @fotos.join(" ");
-            my $p = shell $cmd;
+            my $cmd = "timeout --signal=HUP --kill-after=12 10 $tool ";
+
+            $cmd = 'open ' if $*DISTRO.Str.contains("macos");
+            
+            my $p = shell $cmd ~  @fotos.join(" ");
             $p = True
         }
     }
