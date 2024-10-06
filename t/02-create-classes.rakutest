@@ -1,0 +1,55 @@
+#!/usr/bin/env raku
+use v6.d;
+use Test;
+use lib 'lib';
+use App::Classroom::Toolbox;
+
+plan 1;
+my $class-file = $*PROGRAM.parent(2).add('resources').add('classes').add('demo-class-small');
+
+my $expected = (
+  $class-file.extension('json') => {
+  'max.schneider@school.de' => {
+    'sure-name'=> 'Schneider',
+    'unique-first-name'=> 'Maxi',
+    'first-name'=> 'Maxi',
+    'sex'=> 'f'
+  },
+  'leon.braun@school.de'=> {
+    'unique-first-name'=> 'Leon B.',
+    'sure-name'=> 'Braun',
+    'sex'=> 'm',
+    'first-name'=> 'Leon'
+  },
+  'niklas.hartmann@school.de'=> {
+    'unique-first-name'=> 'Niklas',
+    'first-name'=> 'Niklas',
+    'sure-name'=> 'Hartmann',
+    'sex'=> 'm'
+  },
+  'leon.schäfer@school.de'=> {
+    'unique-first-name'=> 'Leon S.',
+    'first-name'=> 'Leon',
+    'sure-name'=> 'Schäfer',
+    'sex'=> 'm'
+  }
+}, $class-file.extension('emails.txt') => [
+  'leon.braun@school.de',
+  'leon.schäfer@school.de',
+  'max.schneider@school.de',
+  'niklas.hartmann@school.de'
+], $class-file.extension('first-names.txt') => [
+  'Leon',
+  'Leon',
+  'Maxi',
+  'Niklas'
+], $class-file.extension('unique-first-names.txt') => [
+  'Leon B.',
+  'Leon S.',
+  'Maxi',
+  'Niklas'
+]);
+
+is $expected, create-class($class-file), 'Creating class json from class csv';
+
+done-testing;

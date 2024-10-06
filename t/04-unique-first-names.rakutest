@@ -1,0 +1,32 @@
+#!/usr/bin/env raku
+use v6.d;
+use Test;
+use lib 'lib';
+use App::Classroom::Toolbox;
+use JSON::Fast;
+
+plan 1;
+
+my @dirs-to-delete;
+my $test-class = 'demo-class-small';
+my $tmpdir = $*TMPDIR.add('crtb').add(10000.rand);
+mkdir $tmpdir;
+@dirs-to-delete.push: $tmpdir;
+
+my @files-to-delete;
+my $class-file = $*PROGRAM.parent(2).add('resources').add('classes').add($test-class);
+for create-class($class-file) {
+        my $fn = $tmpdir.add(.key.basename);
+        @files-to-delete.push: $fn;
+        spurt $fn, to-json .value
+} 
+my %class = from-json $tmpdir.add($test-class).extension('json').slurp;
+
+%class = unique-first-names(%class);
+
+is extract-unique-first-names(%class).sort, ("Leon Schä.", "Leon Schu.", "Maxi", "Niklas").sort;
+
+unlink $_ for @files-to-delete;
+rmdir $_ for @dirs-to-delete;
+
+done-testing;

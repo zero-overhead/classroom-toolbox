@@ -1,8 +1,10 @@
 use v6.d;
 use Test;
 use lib 'lib';
-use App::Classroom::Toolbox;
 
-pass "replace me";
+plan 2;
+
+use-ok("App::Classroom::Toolbox");
+use-ok("App::Classroom::Toolbox::Timer");
 
 done-testing;

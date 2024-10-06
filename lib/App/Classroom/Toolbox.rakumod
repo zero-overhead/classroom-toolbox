@@ -1,4 +1,7 @@
-unit class App::Classroom::Toolbox:ver<0.0.1>:auth<github:rcmlz>:api<1>;
+unit class App::Classroom::Toolbox:ver<0.0.2>:auth<github:rcmlz>:api<1>;
+
+use experimental :cached;
+use variables :D;
 
 use Text::Table::Simple;
 use Terminal::ANSIColor;
@@ -24,60 +27,203 @@ headers => {
     bottom_border => '',
 };
 
-
-sub get-class(IO $class-file) {
-    $class-file.lines.grep(/^^\w/);
+sub extract-sexs(%class) is export {
+    to-lists(%class)[0]
+}
+sub extract-sure-names(%class) is export {
+    to-lists(%class)[1]
+}
+sub extract-first-names(%class) is export {
+    to-lists(%class)[2]
+}
+sub extract-unique-first-names(%class) is export {
+    to-lists(%class)[3]
+}
+sub extract-emails(%class) is export {
+    to-lists(%class)[4]
 }
 
-sub extract-emails(@class) {
-    @class.map: { .split(',').map(*.trim)[3] }
-}
-
-sub extract-names(@class) {
-    my @names = @class.map({ .split(',').map(*.trim)[2, 1] });
-    my @surenames;
+sub to-lists(%class) is cached is export {
+    my @sexs;
+    my @sure-names;
     my @first-names;
-    for @names {
-        @first-names.push: $_[0];
-        @surenames.push: $_[1];
+    my @unique-first-names;
+    my @emails;
+    for %class -> (:$key, :$value) {
+        @sexs.push: $value<sex>;
+        @sure-names.push: $value<sure-name>;
+        @first-names.push: $value<first-name>;
+        @unique-first-names.push: $value<unique-first-name>;
+        @emails.push: $key;
     }
-    return @first-names if @first-names.unique.elems == @first-names.elems;
-    return unique-first-names(@first-names, @surenames);
+    return  @sexs, @sure-names, @first-names, @unique-first-names, @emails
 }
 
-sub unique-first-names(@first-names, @surenames, :$surename-abrevated-lenght=1) {
-    my Set $repeated = @first-names.repeated.Set;
-    gather {
-        for @first-names.keys -> $i {
-            if @first-names[$i] ∈ $repeated {
-                take @first-names[$i] ~ " " ~ @surenames[$i].substr(0,$surename-abrevated-lenght) ~ '.'
-            }else{
-                take @first-names[$i]
+sub unique-first-names(%class) is export {
+    my $max-surename-abrevated-lenght = 1;
+    for %class -> (:$key, :$value) {
+        $max-surename-abrevated-lenght = max($value<sure-name>.chars, $max-surename-abrevated-lenght)
+    }
+
+    my ($sexes, $sure-names, $first-names, $unique-first-names, $emails) = to-lists(%class);
+    $unique-first-names = $first-names.unique;
+
+    my %class-adjusted = %class.clone;
+    
+    my $surename-abrevated-lenght = 0;
+
+    while $first-names.elems != $unique-first-names.elems and $surename-abrevated-lenght <= $max-surename-abrevated-lenght {
+        $surename-abrevated-lenght += 1;
+        my Set $repeated = $first-names.repeated.Set;
+        $unique-first-names = [];
+        for $first-names.keys -> $i {
+              if $first-names[$i] ∈ $repeated {
+                  $unique-first-names[$i] = $first-names[$i] ~ " " ~ $sure-names[$i].substr(0,$surename-abrevated-lenght) ~ '.'
+              } else {
+                  $unique-first-names[$i] = $first-names[$i]
+              }
+        }
+        $unique-first-names = $unique-first-names.unique
+    }
+    for ^$emails.elems {
+        %class-adjusted{$emails[$_]}<unique-first-name> = $unique-first-names[$_]
+    }
+    return %class-adjusted
+}
+
+sub create-class(IO::Path $class-file) is export {
+    my %class;
+    my @emails;
+    my @first-names;
+    my @unique-first-names;
+    my @sure-names;
+
+    for $class-file.lines.grep(/^^\w/) -> $entry {
+        my ($sex, $sure-name, $first-name, $email) = $entry.split(',').map(*.trim);
+        $email = $email.lc;
+        %class{$email.lc} = {sex => $sex.lc, sure-name => $sure-name, first-name => $first-name, unique-first-name => $first-name};
+        @emails.push: $email.lc;
+        @sure-names.push: $sure-name;
+        @first-names.push: $first-name;
+    }
+
+    %class = unique-first-names(%class);
+
+    for @emails {
+        @unique-first-names.push: %class{$_}<unique-first-name>;
+    }    
+
+    return $class-file.extension('json') => %class,
+           $class-file.extension('emails.txt') => @emails,
+           $class-file.extension('first-names.txt') => @first-names,
+           $class-file.extension('unique-first-names.txt') => @unique-first-names;
+}
+
+sub create-room(IO::Path $room-file) is export {
+    my @room = $room-file.lines.map: { Array.new: $_.comb };
+    
+    return ($room-file.extension('json') => @room,)
+}
+
+sub create-placement(%class, @room, Bool $test?) is export {
+    my @not-placed-students = %class.keys.pick(*);
+    @not-placed-students = %class.keys.sort if $test;
+
+    my @placement = @room.clone;
+
+    # create placements - by prio
+    my @seat-priorities = (^10).map: *.Str;
+    for @seat-priorities -> $prio {
+        for ^@placement.elems -> $row_id {
+            for ^@placement[$row_id].elems -> $seat {
+                my $marker = @placement[$row_id][$seat];
+                if $marker eq $prio and @not-placed-students.elems {
+                    my $student = @not-placed-students.shift;
+                    @placement[$row_id][$seat] = $student => %class{$student}
+                }
             }
         }
     }
+
+    # assign X to seats not needed
+    for ^@placement.elems -> $row_id {
+        for ^@placement[$row_id].elems -> $seat {
+            my $marker = @placement[$row_id][$seat];
+            if $marker ∈ @seat-priorities {
+                @placement[$row_id][$seat] = "X"
+            }
+        }
+    }
+    return placement => @placement, not-placed-students => @not-placed-students
 }
-sub pick-group-from-class-file(IO(Str) :$class-file, UInt :$group-size, IO(Str) :$pictures-folder?) is export {
-    my @class = get-class($class-file);
-    my @group = @class.pick($group-size);
-    my @names = extract-names(@group);
-    print "\n";
-    .join(" ").say for @names;
+
+sub extract-class-from-placement(@placement) is export {
+    my %class;
+    for ^@placement.elems -> $row-id {
+        for ^@placement[$row-id].elems -> $col-id {
+          my $seat = @placement[$row-id][$col-id];
+          my $student = $seat.keys.head;
+          if $student {
+            my %data = $seat{$student};
+            %class{$student} = %data
+          }
+        }
+    }
+    return %class
+}
+
+sub display-placement(@room, :%group = {}, UInt :$max-display-name-width, Bool :$student-view?) is export {
+    my @room-view = @room.clone;
+    for ^@room-view.elems -> $row-id {
+        for ^@room-view[$row-id].elems -> $col-id {
+          my $seat = @room-view[$row-id][$col-id];
+          if $seat ~~ Hash {
+            my $student = $seat.values.head{'unique-first-name'};
+            $student = $student.substr(0, $max-display-name-width);
+            %group{$seat.keys.head}<unique-first-name-colored> = colored($student, 'red on_blue') if %group{$seat.keys.head}:exists;
+            @room-view[$row-id][$col-id] = $student;
+          }
+        }
+    }
+    my $return-value = "";
+    if $student-view {
+        my @placement = lol2table(@room-view, |%text-table-simple-options);
+        $return-value = join "\n", create-header(@placement), @placement, create-footer(@placement)
+    } else {
+        @room-view = @room-view.reverse.map: { Array.new($_.reverse) };
+        my @placement = lol2table(@room-view, |%text-table-simple-options);
+        $return-value = join "\n", create-footer(@placement), @placement, create-header(@placement)
+    }
+    for %group.kv -> $student, $data {
+        my Str $search = $data<unique-first-name>;
+        my Str $replace = $data<unique-first-name-colored>;
+        $return-value ~~ s/$search/$replace/;
+    }
+    return $return-value
+}
+
+sub show_pictures(%group, :$pictures-folder1, :$pictures-folder2) is export {
+    my $pictures-folder = 0;
+    $pictures-folder = $pictures-folder1.IO if $pictures-folder1 and $pictures-folder1.IO.d;
+    $pictures-folder = $pictures-folder2.IO if (not so $pictures-folder and $pictures-folder2.IO.d); 
 
     with $pictures-folder {
         my $extension = '.jpg';
-        my @emails = extract-emails(@group);
+        my @emails = extract-emails(%group);
         my @fotos = gather {
-            for @emails {
-                my $foto = $pictures-folder.add("$_$extension");
-                take $foto if $foto.IO.f
+            for @emails -> $email {
+                my $foto = $pictures-folder.add("$email$extension");
+                if $foto.IO.f {
+                    take $foto
+                } else {
+                    note "missing picture: $foto"
+                }
             }
         }
         if @fotos.elems > 0 {
-            my $tool = 'display';
-            # Linux only, provided by imagemagick
-            $tool = 'open' if $*DISTRO.name.contains("macos");
-            my $cmd = "timeout --kill-after=1 3 $tool " ~ @fotos.join(' ');
+            # uses feh and imagemagick
+            my $tool = "feh --multiwindow --scale-down --draw-tinted --draw-filename --borderless --auto-zoom";
+            my $cmd = "timeout --kill-after=12 10 $tool " ~  @fotos.join(" ");
             my $p = shell $cmd;
             $p = Nil
         }
@@ -121,119 +267,48 @@ sub create-footer(@room --> Str) {
     return $footer
 }
 
-sub create-student-view(@room) is export {
-    my @placement = lol2table(@room, |%text-table-simple-options);
-    join "\n", create-header(@placement), @placement, create-footer(@placement)
-}
+sub create-grouping(%class, UInt :$primary-size, UInt :$secondary-size) is export {
+   my @students = extract-unique-first-names(%class).pick(*);
+   my $n = @students.elems;
 
-sub create-teacher-view(@room) is export {
-    my @room-teacher-view = @room.reverse.map: { Array.new($_.reverse) };
-    my @placement = lol2table(@room-teacher-view, |%text-table-simple-options);
-    join "\n", create-footer(@placement), @placement, create-header(@placement)
-}
-
-sub read-file(IO $file) {
-    from-json $file.slurp;
-}
-
-sub read-group-file(IO(Str) $grouping-file) is export {
-    read-file($grouping-file)
-}
-sub read-placement-file(IO(Str) $placement-file) is export {
-    read-file($placement-file)
-}
-
-sub create-placement(IO(Str) $class-file, IO(Str) $room-file, IO(Str) $placement-dir, UInt $max-name-width) is export {
-    my @not-placed-students = extract-names(get-class($class-file)).pick(*);
-    my @room = $room-file.lines.map: { Array.new: $_.comb };
-
-    # pre-process student names
-    @not-placed-students = @not-placed-students.map({ .substr(0, $max-name-width) });
-
-    # create placements - by prio
-    my @seat-priorities = (^10).map: *.Str;
-    for @seat-priorities -> $prio {
-        for ^@room.elems -> $row_id {
-            for ^@room[$row_id].elems -> $seat {
-                my $marker = @room[$row_id][$seat];
-                if $marker eq $prio and @not-placed-students.elems {
-                    @room[$row_id][$seat] = @not-placed-students.pop
-                }
-            }
-        }
-    }
-
-    # assign X to seats not needed
-    for ^@room.elems -> $row_id {
-        for ^@room[$row_id].elems -> $seat {
-            my $marker = @room[$row_id][$seat];
-            if $marker ∈ @seat-priorities {
-                @room[$row_id][$seat] = "X"
-            }
-        }
-    }
-
-    my $class = $class-file.basename;
-    my $room = $room-file.basename;
-    my $date = Date.today;
-    my $placement-file-name = $placement-dir.add(join '_', $date, $class, $room);
-
-    spurt $placement-file-name, to-json @room;
-
-    .say for create-student-view(@room);
-
-    if @not-placed-students {
-        my $placement-file-name-missing = join '_', $date, $class, $room, "not-placed";
-        spurt $placement-dir.add($placement-file-name-missing), to-json @not-placed-students;
-        note "\nNoch nicht platziert: " ~ @not-placed-students.join(", ") ~ "\n"
-    }
-
-    print "\n";
-    say "export CRTB_PLACEMENT_FILE=$placement-file-name"
-}
-
-sub create-grouping(IO(Str) :$class-file, UInt :$primary-size, UInt :$secondary-size) is export {
-    my @students = extract-names(get-class($class-file)).pick(*);
-    my $n = @students.elems;
-
-    gather {
-        ($secondary-size, $primary-size) Z=> ((0 .. ($n div $secondary-size)) X (0 .. ($n div $primary-size)) andthen
-                .first({ (sum $_ >>*<< ($secondary-size,
-                                        $primary-size)) == $n })) || note "\nImpossible to split $n students into groups of sizes $primary-size and $secondary-size !!\n" andthen
-                .map({
-                    my UInt $gsize = .key;
-                    my UInt $gcount = .value;
-                        for ^$gcount { take @students.splice(0, $gsize)}
-                })
-    }
+   gather {
+       ($secondary-size, $primary-size) Z=> ((0 .. ($n div $secondary-size)) X (0 .. ($n div $primary-size)) andthen
+               .first({ (sum $_ >>*<< ($secondary-size,
+                                       $primary-size)) == $n })) || note "\nImpossible to split $n students into groups of sizes $primary-size and $secondary-size !!\n" andthen
+               .map({
+                   my UInt $gsize = .key;
+                   my UInt $gcount = .value;
+                       for ^$gcount { take @students.splice(0, $gsize)}
+               })
+   }
 }
 
 sub display-grouping(@grouping) is export {
-    my $max-elems = max @grouping.map: *.elems;
-    my $min-elems = min @grouping.map: *.elems;
-    my $pad-elems = $max-elems - $min-elems;
+   my $max-elems = max @grouping.map: *.elems;
+   my $min-elems = min @grouping.map: *.elems;
+   my $pad-elems = $max-elems - $min-elems;
 
-    return if $pad-elems == 0;
+   #return if $pad-elems == 0;
 
-    my @padded;
-    for @grouping {
-        if $_.elems < $max-elems {
-            my @p = |$_, |('' xx $pad-elems);
-            @padded.push: @p
-            }else{
-            @padded.push: $_
-        }
-    }
+   my @padded;
+   for @grouping {
+       if $_.elems < $max-elems {
+           my @p = |$_, |('' xx $pad-elems);
+           @padded.push: @p
+           }else{
+           @padded.push: $_
+       }
+   }
 
-    print "\n";
-    print lol2table(@padded, |%text-table-simple-options).join("\n");
-    print "\n";
+   print "\n";
+   print lol2table(@padded, |%text-table-simple-options).join("\n");
+   print "\n";
 }
 
 sub save-grouping(@grouping, IO(Str) :$group-folder, IO(Str) :$class-file, UInt :$primary-size, UInt :$secondary-size) is export {
-    my $group-file-name = $group-folder.add(join '_', Date.today, $class-file.basename, $primary-size, $secondary-size);
-    spurt $group-file-name, to-json @grouping;
-    return $group-file-name
+   my $group-file-name = $group-folder.add(join '_', Date.today, $class-file.basename, $primary-size, $secondary-size);
+   spurt $group-file-name.extension('json'), to-json @grouping;
+   return $group-file-name
 }
 
 =begin pod
@@ -255,6 +330,9 @@ crtb-tool-name --help
 =begin code :lang<bash>
 crtb-init-folders
 
+crtb-create-class
+crtb-create-room
+
 crtb-create-placement
 crtb-display-placement
 
@@ -272,15 +350,15 @@ crtb-timer
 Set defaults to be used by tools - if you do not like to use the corresponding command line parameters.
 
 =begin code :lang<bash>
-export CRTB_CLASS=classes/demo-class-large
-export CRTB_ROOM=rooms/demo-room-1
+export CRTB_CLASS_FILE=classes/demo-class-large
+export CRTB_ROOM_FILE=rooms/demo-room-1
 =end code
 
 After you created a placement, grouping or grading you might want to set
 =begin code :lang<bash>
-export CRTB_PLACEMENT=placements/demo-placement
-export CRTB_GROUP=groups/demo-grouping
-export CRTB_GRADE=grades/demo-grading
+export CRTB_PLACEMENT_FILE=placements/demo-placement
+export CRTB_GROUP_FILE=groups/demo-grouping
+export CRTB_GRADE_FILE=grades/demo-grading
 =end code
 
 This usually won't change much - perhaps use direnv to set these automatically
@@ -292,16 +370,16 @@ export CRTB_GROUP_FOLDER=groups
 =end code
 
 =defn classes/
---class-file= or CRTB_CLASS=
+--class-file= or CRTB_CLASS_FILE=
 
 =defn rooms/ 
---room-file= or CRTB_ROOM=
+--room-file= or CRTB_ROOM_FILE=
 
 =defn pictures/ 
---picture-folder= or CRTB_PICTURE_FOLDER=
+--pictures-folder= or CRTB_PICTURES_FOLDER=
 
 =defn placements/
---placement-file= or export CRTB_PLACENMENT=placements/demo-placement
+--placements-file= or export CRTB_PLACEMENT_FILE=placements/demo-placement
 
 =defn grades
 t.b.d
@@ -316,17 +394,17 @@ zef install .
 
 =end code
 
-=defn imagemagick
-required for showing pictures on Linux, install
+=defn feh and imagemagick
+required for showing pictures, install
 
 =begin code :lang<bash>
-brew install imagemagick
+brew install feh imagemagick
 =end code
 
 or e.g.
 
 =begin code :lang<bash>
-nix-shell -p imagemagick
+nix-shell -p feh imagemagick
 =end code
 
 =head1 AUTHOR

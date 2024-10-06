@@ -1,0 +1,11 @@
+#!/usr/bin/env raku
+use v6.d;
+use App::Classroom::Toolbox;
+use JSON::Fast;
+
+sub MAIN(IO::Path(Str) :rf(:$room-file) where *.IO.f = %*ENV<CRTB_ROOM_FILE>,     #= file containing room information; CRTB_ROOM_FILE
+    ) {
+    for create-room($room-file) {
+        spurt .key, to-json .value
+    }
+}

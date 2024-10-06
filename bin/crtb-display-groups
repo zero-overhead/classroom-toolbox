@@ -1,9 +1,10 @@
 #!/usr/bin/env raku
 use v6.d;
-
 use App::Classroom::Toolbox;
-
-sub MAIN(Str:D :gf(:$grouping-file) where *.IO.f = %*ENV<CRTB_GROUP_FILE>, #= file containing grouping; --grouping-file=groups/demo-grouping or 'export CRTB_GROUP_FILE=groups/demo-grouping'
+use JSON::Fast;
+          
+sub MAIN(IO::Path(Str) :gf(:$grouping-file) where *.extension('json').f = %*ENV<CRTB_GROUP_FILE>, #= file containing grouping; --grouping-file=groups/demo-grouping or 'export CRTB_GROUP_FILE=groups/demo-grouping'
          ) {
-    read-group-file($grouping-file) ==> display-grouping;
+    from-json $grouping-file.slurp ==> display-grouping;
+    print("\n")
 }
