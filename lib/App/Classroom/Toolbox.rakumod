@@ -403,14 +403,13 @@ zef install .
 
 =end code
 
-=defn feh and imagemagick
+=defn feh and imagemagick and timeout
 required for showing pictures, install
 
 =begin code :lang<bash>
-brew install feh imagemagick
+brew install feh imagemagick coreutils
+alias timeout=gtimeout
 =end code
-
-or e.g.
 
 =begin code :lang<bash>
 nix-shell -p feh imagemagick

@@ -15,9 +15,9 @@ my $expected = (
     'first-name'=> 'Maxi',
     'sex'=> 'f'
   },
-  'leon.braun@school.de'=> {
-    'unique-first-name'=> 'Leon B.',
-    'sure-name'=> 'Braun',
+  'leon.schuster@school.de'=> {
+    'unique-first-name'=> 'Leon Schu.',
+    'sure-name'=> 'Schuster',
     'sex'=> 'm',
     'first-name'=> 'Leon'
   },
@@ -28,13 +28,13 @@ my $expected = (
     'sex'=> 'm'
   },
   'leon.schäfer@school.de'=> {
-    'unique-first-name'=> 'Leon S.',
+    'unique-first-name'=> 'Leon Schä.',
     'first-name'=> 'Leon',
     'sure-name'=> 'Schäfer',
     'sex'=> 'm'
   }
 }, $class-file.extension('emails.txt') => [
-  'leon.braun@school.de',
+  'leon.schuster@school.de',
   'leon.schäfer@school.de',
   'max.schneider@school.de',
   'niklas.hartmann@school.de'
@@ -44,8 +44,8 @@ my $expected = (
   'Maxi',
   'Niklas'
 ], $class-file.extension('unique-first-names.txt') => [
-  'Leon B.',
-  'Leon S.',
+  'Leon Schu.',
+  'Leon Schä.',
   'Maxi',
   'Niklas'
 ]);

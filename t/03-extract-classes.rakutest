@@ -23,17 +23,17 @@ for create-class($class-file) {
 my %class = from-json $tmpdir.add($test-class).extension('json').slurp;
 
 is extract-sexs(%class).sort, ("m", "m", "m", "f").sort;
-is extract-sure-names(%class).sort, ("Braun", "Schäfer", "Schneider", "Hartmann").sort;
+is extract-sure-names(%class).sort, ("Schuster", "Schäfer", "Schneider", "Hartmann").sort;
 is extract-first-names(%class).sort, ("Leon", "Leon", "Maxi", "Niklas").sort;
-is extract-unique-first-names(%class).sort, ("Leon B.", "Leon S.", "Maxi", "Niklas").sort;
-is extract-emails(%class).sort, ('leon.braun@school.de', 'leon.schäfer@school.de', 'max.schneider@school.de', 'niklas.hartmann@school.de').sort;
+is extract-unique-first-names(%class).sort, ("Leon Schu.", "Leon Schä.", "Maxi", "Niklas").sort;
+is extract-emails(%class).sort, ('leon.schuster@school.de', 'leon.schäfer@school.de', 'max.schneider@school.de', 'niklas.hartmann@school.de').sort;
 
 is (to-lists(%class).map: *.sort), (
   ("m", "m", "m", "f").sort, 
-  ("Braun", "Schäfer", "Schneider", "Hartmann").sort, 
+  ("Schuster", "Schäfer", "Schneider", "Hartmann").sort, 
   ("Leon", "Leon", "Maxi", "Niklas").sort,
-  ("Leon B.", "Leon S.", "Maxi", "Niklas").sort,
-  ('leon.braun@school.de', 'leon.schäfer@school.de', 'max.schneider@school.de', 'niklas.hartmann@school.de').sort
+  ("Leon Schu.", "Leon Schä.", "Maxi", "Niklas").sort,
+  ('leon.schuster@school.de', 'leon.schäfer@school.de', 'max.schneider@school.de', 'niklas.hartmann@school.de').sort
 );
 
 unlink $_ for @files-to-delete;
