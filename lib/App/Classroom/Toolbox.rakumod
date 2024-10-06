@@ -204,16 +204,18 @@ sub display-placement(@room, :%group = {}, UInt :$max-display-name-width, Bool :
 
 sub show_pictures(%group, :$pictures-folder1, :$pictures-folder2) is export {
     my $pictures-folder = 0;
-    $pictures-folder = $pictures-folder1.IO if $pictures-folder1 and $pictures-folder1.IO.d;
-    $pictures-folder = $pictures-folder2.IO if (not so $pictures-folder and $pictures-folder2.IO.d); 
+    $pictures-folder = $pictures-folder1 if so $pictures-folder1 and $pictures-folder1.IO.d;
+    $pictures-folder = $pictures-folder2 if (not so $pictures-folder and so $pictures-folder2 and $pictures-folder2.IO.d); 
 
-    with $pictures-folder {
+    return if not $pictures-folder.IO.d;
+
+    with $pictures-folder.IO {
         my $extension = '.jpg';
         my @emails = extract-emails(%group);
         my @fotos = gather {
             for @emails -> $email {
-                my $foto = $pictures-folder.add("$email$extension");
-                if $foto.IO.f {
+                my $foto = $pictures-folder.add($email ~ $extension);
+                if $foto.f {
                     take $foto
                 } else {
                     note "missing picture: $foto"
@@ -222,12 +224,13 @@ sub show_pictures(%group, :$pictures-folder1, :$pictures-folder2) is export {
         }
         if @fotos.elems > 0 {
             # uses feh and imagemagick
-            my $tool = "feh --multiwindow --scale-down --draw-tinted --draw-filename --borderless --auto-zoom";
-            my $cmd = "timeout --kill-after=12 10 $tool " ~  @fotos.join(" ");
+            my $tool = "feh --multiwindow --scale-down --no-menus --draw-tinted --draw-filename --borderless --auto-zoom --";
+            my $cmd = "timeout --signal=HUP --kill-after=12 10 $tool " ~  @fotos.join(" ");
             my $p = shell $cmd;
-            $p = Nil
+            $p = True
         }
     }
+    return True
 }
 
 sub init-folders is export {
@@ -329,10 +332,16 @@ crtb-tool-name --help
 
 =begin code :lang<bash>
 crtb-init-folders
+=end code
 
+Start by creating class and room-json files from class and room input files.
+
+=begin code :lang<bash>
 crtb-create-class
 crtb-create-room
+=end code
 
+=begin code :lang<bash>
 crtb-create-placement
 crtb-display-placement
 
