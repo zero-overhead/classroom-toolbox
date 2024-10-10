@@ -202,7 +202,7 @@ sub display-placement(@room, :%group = {}, UInt :$max-display-name-width, Bool :
     return $return-value
 }
 
-sub show_pictures(%group, :$pictures-folder1, :$pictures-folder2) is export {
+sub show_pictures(%group, :$pictures-folder1, :$pictures-folder2, UInt :$timeout, Bool :$debug) is export {
     my $pictures-folder = 0;
     $pictures-folder = $pictures-folder1 if so $pictures-folder1 and $pictures-folder1.IO.d;
     $pictures-folder = $pictures-folder2 if (not so $pictures-folder and so $pictures-folder2 and $pictures-folder2.IO.d); 
@@ -224,13 +224,14 @@ sub show_pictures(%group, :$pictures-folder1, :$pictures-folder2) is export {
         }
         if @fotos.elems > 0 {
             # uses feh and imagemagick
-            my $tool = "feh --multiwindow --scale-down --no-menus --draw-tinted --draw-filename --borderless --auto-zoom --";
-            my $cmd = "timeout --signal=HUP --kill-after=12 10 $tool ";
+            my $tool = "feh --multiwindow --scale-down --no-menus --draw-tinted --draw-filename --borderless --auto-zoom --caption-path . --";
+            my $cmd = "timeout --signal=HUP --kill-after=" ~ $timeout + 2 ~ " $timeout $tool ";
 
             # uses MacOS Preview.App
             $cmd = 'open ' if $*DISTRO.Str.contains("macos");
-            
-            my $p = shell $cmd ~  @fotos.join(" ");
+            my Str $shell-cmd = $cmd ~  @fotos.join(" ");
+            note $shell-cmd if $debug;
+            my $p = shell $shell-cmd;
             $p = True
         }
     }

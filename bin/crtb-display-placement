@@ -3,9 +3,9 @@ use v6.d;
 use App::Classroom::Toolbox;
 use JSON::Fast;
 
-sub MAIN(IO::Path(Str) :p(:$placement-file)         where *.extension('json').f = %*ENV<CRTB_PLACEMENT_FILE>,         #= file containing placement; --placement-file=placements/demo-placement or 'export CRTB_PLACEMENT_FILE=placements/demo-placement'
-         UInt          :m(:$max-display-name-width) where * > 0                 = %*ENV<CRTB_MAX_DISPLAY_NAME_WIDTH>, #= maximum width of displayed names, 'export CRTB_MAX_DISPLAY_NAME_WIDTH=20'
-         Bool          :s(:$student-view)                                                                             #= show how students see it, otherwise teacher view is selected
+sub MAIN(IO::Path(Str) :p(:$placement-file)         where *.extension('json').f = %*ENV<CRTB_PLACEMENT_FILE>,                 #= file containing placement; --placement-file=placements/demo-placement or 'export CRTB_PLACEMENT_FILE=placements/demo-placement'
+         UInt          :m(:$max-display-name-width) where * > 0                 = (%*ENV<CRTB_MAX_DISPLAY_NAME_WIDTH> || 15), #= maximum width of displayed names, 'export CRTB_MAX_DISPLAY_NAME_WIDTH=20'
+         Bool          :s(:$student-view)                                                                                     #= show how students see it, otherwise teacher view is selected
          ) {
     my @placement = from-json $placement-file.extension('json').slurp;
     say display-placement(@placement, :$max-display-name-width, :$student-view);

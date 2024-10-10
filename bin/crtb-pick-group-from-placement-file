@@ -3,18 +3,24 @@ use v6.d;
 use App::Classroom::Toolbox;
 use JSON::Fast;
 
-sub MAIN (IO::Path(Str) :p(:$placement-file) where *.f    = %*ENV<CRTB_PLACEMENT_FILE>, #= file containing placement; --placement-file=placements/demo-placement or 'export CRTB_PLACEMENT_FILE=placements/demo-placement'
-          IO::Path(Str) :pf(:$pictures-folder)                                        , #= folder picture files; --pictures-folder=pictures 'export CRTB_PICTURES_FOLDER=pictures'
-          UInt          :g(:$group-size)     where * > 0         = %*ENV<CRTB_GROUP_SIZE>,      #= size of group to pick; 'export CRTB_GROUP_SIZE=1'
-          UInt          :m(:$max-display-name-width) where * > 0 = %*ENV<CRTB_MAX_DISPLAY_NAME_WIDTH>, #= maximum width of displayed names, 'export CRTB_MAX_DISPLAY_NAME_WIDTH=20'
-          Bool          :s(:$student-view)                                                                             #= show how students see it, otherwise teacher view is selected
+sub MAIN (IO::Path(Str) :p(:$placement-file)         where *.f   = %*ENV<CRTB_PLACEMENT_FILE>,                 #= file containing placement; --placement-file=placements/demo-placement or 'export CRTB_PLACEMENT_FILE=placements/demo-placement'
+          IO::Path(Str) :f(:$pictures-folder),                                                                 #= folder picture files; --pictures-folder=pictures 'export CRTB_PICTURES_FOLDER=pictures'
+          UInt          :g(:$group-size)             where * > 0 = (%*ENV<CRTB_GROUP_SIZE> || 2),              #= size of group to pick; 'export CRTB_GROUP_SIZE=1'
+          UInt          :m(:$max-display-name-width) where * > 0 = (%*ENV<CRTB_MAX_DISPLAY_NAME_WIDTH> || 15), #= maximum width of displayed names, 'export CRTB_MAX_DISPLAY_NAME_WIDTH=20'
+          UInt          :t(:$timeout)                where * > 0 = (%*ENV<CRTB_TIMEOUT> || 5),                 #= timeout of picture display (via feh)
+          Bool          :d(:$debug),
+          Bool          :s(:$student-view)                                                                     #= show how students see it, otherwise teacher view is selected
          ) {
 
-    my @placement = from-json $placement-file.extension('json').slurp;
-    my %class = extract-class-from-placement(@placement);
-    my %group = %class.pick($group-size);
-    
-    say display-placement(@placement, :%group, :$max-display-name-width, :$student-view);
-    show_pictures(%group, pictures-folder1 => $pictures-folder, pictures-folder2 => %*ENV<CRTB_PICTURES_FOLDER>)
+    while True {
+        my @placement = from-json $placement-file.extension('json').slurp;
+        my %class = extract-class-from-placement(@placement);
+        my %group = %class.pick(*).pick($group-size);
+        my Str $view = display-placement(@placement, :%group, :$max-display-name-width, :$student-view);
+        shell 'clear';
+        say $view;
+        show_pictures(%group, pictures-folder1 => $pictures-folder, pictures-folder2 => %*ENV<CRTB_PICTURES_FOLDER>, :$timeout, :$debug);
+        prompt
+    }
 
 }

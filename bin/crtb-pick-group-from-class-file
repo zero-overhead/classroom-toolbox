@@ -3,17 +3,19 @@ use v6.d;
 use App::Classroom::Toolbox;
 use JSON::Fast;
 
-sub MAIN (IO::Path(Str) :cf(:$class-file)      where *.f = %*ENV<CRTB_CLASS_FILE>,  #= file containing students information; --class-file=classes/demo-class-small or 'export CRTB_CLASS_FILE=classes/demo-class-small'
-          IO::Path(Str) :pf(:$pictures-folder)                                   ,  #= folder picture files; --pictures-folder=pictures 'export CRTB_PICTURES_FOLDER=pictures'
-          UInt          :g(:$group-size)       where * > 0 = %*ENV<CRTB_GROUP_SIZE> #= size of group to pick; 'export CRTB_GROUP_SIZE=1'
+sub MAIN (IO::Path(Str) :c(:$class-file)      where *.f = %*ENV<CRTB_CLASS_FILE>,         #= file containing students information; --class-file=classes/demo-class-small or 'export CRTB_CLASS_FILE=classes/demo-class-small'
+          IO::Path(Str) :f(:$pictures-folder),                                            #= folder picture files; --pictures-folder=pictures 'export CRTB_PICTURES_FOLDER=pictures'
+          UInt          :g(:$group-size)      where * > 0 = (%*ENV<CRTB_GROUP_SIZE> || 2),#= size of group to pick; 'export CRTB_GROUP_SIZE=1'
+          UInt          :t(:$timeout)         where * > 0 = (%*ENV<CRTB_TIMEOUT> || 5),   #= timeout of picture display (via feh)
+          Bool          :d(:$debug),
         ) {
             
     my %class = from-json $class-file.extension('json').slurp;
-    my %group = %class.pick($group-size);
-    
-    print "\n";
-    .join(" ").say for extract-unique-first-names(%group);
-    print "\n";
-
-    show_pictures(%group, pictures-folder1 => $pictures-folder, pictures-folder2 => %*ENV<CRTB_PICTURES_FOLDER>)
+    while True {
+      my %group = %class.pick(*).pick($group-size);
+      shell 'clear';
+      $_.say for extract-unique-first-names(%group);
+      show_pictures(%group, pictures-folder1 => $pictures-folder, pictures-folder2 => %*ENV<CRTB_PICTURES_FOLDER>, :$timeout, :$debug);
+      prompt
+    }
 }

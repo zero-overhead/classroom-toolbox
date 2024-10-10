@@ -2,8 +2,8 @@
 use v6.d;
 use App::Classroom::Toolbox::Timer;
 
-sub MAIN(UInt:D :min($minutes), #= Minutes the timer shall run
-         Bool   :$skip-wait,    #= Wait for return/enter key after timer finished?
+sub MAIN(UInt:D :m($minutes) where * > 0 = 40, #= Minutes the timer shall run
+         Bool   :s(:$skip-wait),               #= Wait for return/enter key after timer finished?
          ) {
     run-timer($minutes, $skip-wait)
 }

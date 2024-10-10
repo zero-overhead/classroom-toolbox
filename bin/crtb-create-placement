@@ -3,10 +3,10 @@ use v6.d;
 use App::Classroom::Toolbox;
 use JSON::Fast;
 
-sub MAIN (IO::Path(Str:D) :c(:$class-file)             where *.f    = %*ENV<CRTB_CLASS_FILE>,             #= file containing students information; --class-file=classes/demo-class-small or 'export CRTB_CLASS_FILE=classes/demo-class-small'
-          IO::Path(Str:D) :r(:$room-file)              where *.f    = %*ENV<CRTB_ROOM_FILE>,              #= folder to store created groups as files --room-file=rooms/demo-room-1 'export CRTB_ROOM_FILE=rooms/demo-room-1'
-          IO::Path(Str:D) :p(:$placements-folder)      where *.d    = %*ENV<CRTB_PLACEMENTS_FOLDER>,      #= folder to store created placements as files; --placements-folder=placements 'export CRTB_PLACEMENTS_FOLDER=placements'
-          UInt:D          :m(:$max-display-name-width) where * > 0  = %*ENV<CRTB_MAX_DISPLAY_NAME_WIDTH>, #= maximum width of displayed names, 'export CRTB_MAX_DISPLAY_NAME_WIDTH=20'
+sub MAIN (IO::Path(Str:D) :c(:$class-file)            where *.f     = %*ENV<CRTB_CLASS_FILE>,                     #= file containing students information; --class-file=classes/demo-class-small or 'export CRTB_CLASS_FILE=classes/demo-class-small'
+          IO::Path(Str:D) :r(:$room-file)             where *.f     = %*ENV<CRTB_ROOM_FILE>,                      #= folder to store created groups as files --room-file=rooms/demo-room-1 'export CRTB_ROOM_FILE=rooms/demo-room-1'
+          IO::Path(Str:D) :p(:$placements-folder)     where *.d     = %*ENV<CRTB_PLACEMENTS_FOLDER>,              #= folder to store created placements as files; --placements-folder=placements 'export CRTB_PLACEMENTS_FOLDER=placements'
+          UInt:D          :m(:$max-display-name-width) where * > 0  = (%*ENV<CRTB_MAX_DISPLAY_NAME_WIDTH> || 15), #= maximum width of displayed names, 'export CRTB_MAX_DISPLAY_NAME_WIDTH=20'
           ) {
     
     my %class = from-json $class-file.extension('json').slurp;

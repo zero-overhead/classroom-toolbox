@@ -3,7 +3,7 @@ use v6.d;
 use App::Classroom::Toolbox;
 use JSON::Fast;
 
-sub MAIN(IO::Path(Str) :cf(:$class-file) where *.f = %*ENV<CRTB_CLASS_FILE>, #= file containing students information; --class-file=classes/demo-class-small or 'export CRTB_CLASS_FILE=classes/demo-class-small'
+sub MAIN(IO::Path(Str) :c(:$class-file) where *.f = %*ENV<CRTB_CLASS_FILE>, #= file containing students information; --class-file=classes/demo-class-small or 'export CRTB_CLASS_FILE=classes/demo-class-small'
     ) {
     for create-class($class-file) {
         spurt .key, to-json .value
