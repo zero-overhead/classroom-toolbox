@@ -114,9 +114,9 @@ sub create-class(IO::Path $class-file) is export {
     }    
 
     return $class-file.extension('json') => %class,
-           $class-file.extension('emails.txt') => @emails,
-           $class-file.extension('first-names.txt') => @first-names,
-           $class-file.extension('unique-first-names.txt') => @unique-first-names;
+           $class-file.extension('emails.txt') => @emails.sort,
+           $class-file.extension('first-names.txt') => @first-names.sort,
+           $class-file.extension('unique-first-names.txt') => @unique-first-names.sort;
 }
 
 sub create-room(IO::Path $room-file) is export {
@@ -210,16 +210,20 @@ sub show_pictures(%group, :$pictures-folder1, :$pictures-folder2, UInt :$timeout
     return if not $pictures-folder.IO.d;
 
     with $pictures-folder.IO {
-        my $extension = '.jpg';
+        my @extensions = <.jpg .png>;
         my @emails = extract-emails(%group);
         my @fotos = gather {
             for @emails -> $email {
-                my $foto = $pictures-folder.add($email ~ $extension);
-                if $foto.f {
-                    take $foto
-                } else {
-                    note "missing picture: $foto"
+                my Bool $found = False;
+                for @extensions -> $extension {
+                    my $foto = $pictures-folder.add($email ~ $extension);
+                    if $foto.f {
+                        take $foto;
+                        $found = True;
+                        last
+                    }
                 }
+                note "missing picture: " ~ $pictures-folder.add($email) ~ @extensions.join("|") unless $found
             }
         }
         if @fotos.elems > 0 {
